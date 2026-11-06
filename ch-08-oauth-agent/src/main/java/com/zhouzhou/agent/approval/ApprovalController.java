@@ -20,6 +20,6 @@ public class ApprovalController {
     @PostMapping("/{ticketId}/approve")
     @PreAuthorize("hasRole('RISK_APPROVER')")
     public ApprovalService.ApprovalTicket approve(@PathVariable String ticketId, Authentication approver) {
-        return this.approvalService.approve(ticketId, approver.getName());
+        return this.approvalService.approve(ticketId);
     }
 }

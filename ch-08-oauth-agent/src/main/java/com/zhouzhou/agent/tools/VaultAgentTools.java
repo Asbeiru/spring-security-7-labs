@@ -2,55 +2,43 @@ package com.zhouzhou.agent.tools;
 
 import java.math.BigDecimal;
 import java.util.UUID;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
-
 import com.zhouzhou.agent.approval.RequiresHumanApproval;
+import com.zhouzhou.agent.security.AccountAccess;
+import com.zhouzhou.agent.security.TrustedIdentity;
 
-/**
- * AI 智能体可调用的核心资产工具服务
- */
 @Service
 public class VaultAgentTools {
-
     private static final Logger log = LoggerFactory.getLogger(VaultAgentTools.class);
+    private final AccountAccess accountAccess;
 
-    /**
-     * 资产调拨结果
-     */
-    public record TransferExecutionResult(String txId, String status, String message) {
+    public VaultAgentTools(AccountAccess accountAccess) {
+        this.accountAccess = accountAccess;
     }
 
-    /**
-     * 工具 1：低风险账户分析
-     */
+    public record TransferExecutionResult(String txId, String status, String message) { }
+
     @Tool(description = "分析指定账户的合规风险")
-    @PreAuthorize("hasAuthority('SCOPE_mcp:analytics:read')")
+    @PreAuthorize("hasAuthority('SCOPE_mcp:analytics:read') and @accountAccess.owns(authentication, #accountId)")
     public String analyzeAccountRisk(@ToolParam(description = "账户 ID") String accountId) {
-        log.info("执行低风险工具：分析账户 {} 的合规状态", accountId);
-        return "账户 " + accountId + " 财务评级良好，无违规记录。";
+        return "演示账户 " + accountId + "：未查询真实财务数据。";
     }
 
-    /**
-     * 工具 2：高危资金调拨
-     *
-     * 门禁 1：@PreAuthorize 校验令牌中必须同时含有指定 Scope 与角色
-     * 门禁 2：@RequiresHumanApproval 要求存在一张与本次参数完全匹配的已批准工单
-     */
-    @Tool(description = "从金库向目标账户划转资金。高风险操作，需要人工审批")
-    @PreAuthorize("hasAuthority('SCOPE_mcp:vault:transfer') and hasRole('FINANCE_ADMIN')")
+    @Tool(description = "从当前租户金库向本租户账户模拟调拨，需要人工审批")
+    @PreAuthorize("hasAuthority('SCOPE_mcp:vault:transfer') and hasRole('FINANCE_ADMIN') "
+            + "and @accountAccess.canTransfer(authentication, #targetAccount, #amount)")
     @RequiresHumanApproval
     public TransferExecutionResult transferVaultFunds(
             @ToolParam(description = "目标账户") String targetAccount,
             @ToolParam(description = "划转金额（元）") BigDecimal amount) {
-        // 能走到这里，说明两道门禁均已通过
+        String source = this.accountAccess.treasury(TrustedIdentity.current());
         String txId = "TX-" + UUID.randomUUID();
-        log.info("资金调拨成功，目标账户: {}，金额: {}，交易流水号: {}", targetAccount, amount, txId);
-        return new TransferExecutionResult(txId, "SUCCESS", "调拨执行成功");
+        log.info("模拟调拨：来源 {}，目标 {}，金额 {}，编号 {}", source, targetAccount, amount, txId);
+        return new TransferExecutionResult(txId, "SIMULATED", "授权通过，未发生真实资金变动");
     }
 }

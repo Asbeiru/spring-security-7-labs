@@ -6,16 +6,17 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.zhouzhou.agent.tools.VaultAgentTools;
+import com.zhouzhou.agent.tools.KnowledgeTools;
 
 @RestController
 public class AgentController {
 
     private final ChatClient chatClient;
 
-    public AgentController(ChatClient.Builder chatClientBuilder, VaultAgentTools vaultAgentTools) {
+    public AgentController(ChatClient.Builder chatClientBuilder, VaultAgentTools vaultAgentTools, KnowledgeTools knowledgeTools) {
         this.chatClient = chatClientBuilder
                 .defaultSystem("你是企业资产助手。任何工具的授权结果以系统返回为准，不要尝试绕过。")
-                .defaultTools(vaultAgentTools)
+                .defaultTools(vaultAgentTools, knowledgeTools)
                 .build();
     }
 

@@ -13,12 +13,16 @@ import org.springframework.stereotype.Component;
 
 /**
  * 没有向量库时让应用能启动的文档存储。它按元数据过滤，不做语义相似度。
- * 文章里的隔离断言走的是 EnterpriseRagService 交给 VectorStore 的过滤表达式。
+ * 用于验证过滤流程，不模拟真实向量数据库的索引与相似度计算。
  */
 @Component
 public class InMemoryDocumentStore implements VectorStore {
 
     private final List<Document> documents = new CopyOnWriteArrayList<>();
+
+    public void clear() {
+        this.documents.clear();
+    }
 
     @Override
     public void add(List<Document> documents) {

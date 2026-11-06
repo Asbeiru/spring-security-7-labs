@@ -1,6 +1,7 @@
 package com.zhouzhou.agent.security.config;
 
 import org.springframework.aop.Advisor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.aop.support.annotation.AnnotationMatchingPointcut;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
@@ -24,7 +25,7 @@ public class AgentMethodSecurityConfig {
      */
     @Bean
     @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-    static Advisor humanApprovalAdvisor(ApprovalService approvalService) {
+    static Advisor humanApprovalAdvisor(ObjectProvider<ApprovalService> approvalService) {
         AuthorizationManagerBeforeMethodInterceptor interceptor = new AuthorizationManagerBeforeMethodInterceptor(
                 AnnotationMatchingPointcut.forMethodAnnotation(RequiresHumanApproval.class),
                 new HumanApprovalAuthorizationManager(approvalService));

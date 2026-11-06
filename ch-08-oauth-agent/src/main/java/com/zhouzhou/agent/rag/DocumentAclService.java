@@ -2,30 +2,24 @@ package com.zhouzhou.agent.rag;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
+import com.zhouzhou.agent.security.TrustedIdentity;
 import org.springframework.stereotype.Service;
 
-/**
- * 文档级授权表。文章里的 PermissionEvaluator 会调用它；默认没有任何授权，
- * 共享关系需要显式 grant。文档所有者仍由 @PostFilter 里的 owner 条件放行。
- */
+/** 示例 ACL 目录，由可信管理流程维护，不向模型暴露授权写接口。 */
 @Service
 public class DocumentAclService {
+    private record Grant(String issuer, String tenant, String subject, String documentId, String permission) { }
+    private final Set<Grant> grants = ConcurrentHashMap.newKeySet();
 
-    private final Set<String> grants = ConcurrentHashMap.newKeySet();
-
-    public void grant(String username, String docId, String permission) {
-        this.grants.add(key(username, docId, permission));
+    public void grant(TrustedIdentity identity, String documentId, String permission) {
+        this.grants.add(new Grant(identity.issuer(), identity.tenant(), identity.subject(), documentId, permission));
     }
 
-    public boolean isGranted(String username, String docId, String permission) {
-        if (username == null || docId == null || permission == null) {
-            return false;
-        }
-        return this.grants.contains(key(username, docId, permission));
+    public boolean isGranted(TrustedIdentity identity, String documentId, String permission) {
+        return this.grants.contains(new Grant(identity.issuer(), identity.tenant(), identity.subject(), documentId, permission));
     }
 
-    private static String key(String username, String docId, String permission) {
-        return username + "|" + docId + "|" + permission;
+    public void clear() {
+        this.grants.clear();
     }
 }
