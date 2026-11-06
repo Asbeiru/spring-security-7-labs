@@ -1,0 +1,12 @@
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://auth.zhouzhou.com
+          audiences: https://api.zhouzhou.com
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:demo-placeholder}
+server:
+  forward-headers-strategy: framework
